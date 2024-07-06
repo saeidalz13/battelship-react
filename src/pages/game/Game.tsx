@@ -5,11 +5,11 @@ import ActionRoom from "./ActionRoom";
 import { useSearchParams } from "react-router-dom";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
-import { Message, RespSessionId } from "../../models/websocket/response";
+import { Message, RespSessionId } from "../../models/websocket/Response";
 import { Code } from "../../models/websocket/Signal";
 import { GameDifficulty, GridSize } from "../../models/websocket/Enums";
 import { ReqCreateGame } from "../../models/websocket/Request";
-import { handleIncomingMessage } from "../../handlers/Handlers";
+import { Session } from "../../models/game/Session";
 
 enum PageView {
   WAITING = 0,
@@ -30,7 +30,7 @@ const GameAction = () => {
   }, [gridSize]);
 
   // Session info
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [pageView, setPageView] = useState<PageView>(PageView.WAITING);
 
   const mounted = useRef(false);
@@ -69,9 +69,25 @@ const GameAction = () => {
 
       ws.onmessage = (event) => {
         const msg: Message<unknown> = JSON.parse(event.data);
-        if (msg.payload) {
-          handleIncomingMessage(msg)
-          console.log(msg.payload);
+
+        if (!msg || !msg.code) {
+          console.error("Invalid type of incoming message");
+          return;
+        }
+
+        switch (msg.code) {
+          case Code.SESSION_ID: {
+            const p = msg.payload as RespSessionId;
+            setSession(new Session(p.session_id));
+            break;
+          }
+
+          case Code.CREATE_GAME: {
+            break;
+          }
+
+          default:
+            return;
         }
       };
 
@@ -83,7 +99,7 @@ const GameAction = () => {
         console.log("Connection closed:", ev);
       };
     }
-  }, []);
+  }, [gameDifficulty]);
 
   if (gridSize === null) {
     return (
