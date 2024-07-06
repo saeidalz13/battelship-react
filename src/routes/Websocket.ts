@@ -1,0 +1,1 @@
+export const BACKEND_WS = import.meta.env.VITE_BACKEND_WS_URL

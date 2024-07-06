@@ -1,0 +1,6 @@
+export enum Code {
+    SESSION_ID = 0,
+    RECEIVED_INVALID_SESSION_ID,
+    CREATE_GAME,
+    JOIN_GAME,
+}

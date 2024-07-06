@@ -2,10 +2,10 @@ import { useNavigate } from "react-router-dom";
 import MainHomeButton from "../../components/buttons/MainHomeButton";
 import MainHeader from "../../components/headers/MainHeader";
 import { useState } from "react";
-import gc from "../../constants/gameConsts";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
 import MainRoutes from "../../routes/MainRoutes";
+import { GridSize } from "../../models/websocket/Enums";
 
 const ChooseDifficulty = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const ChooseDifficulty = () => {
   const handleDifficultySelection = (gridSize: number) => {
     setIsBtnDisabled(true);
 
-    navigate(`${MainRoutes.WaitingRoom}?gridSize=${gridSize}`)
+    navigate(`${MainRoutes.Game}?gridSize=${gridSize}`)
   };
 
   return (
@@ -23,7 +23,7 @@ const ChooseDifficulty = () => {
 
       <div className="mb-2">
         <MainHomeButton
-          onClick={() => handleDifficultySelection(gc.GridSize.EASY)}
+          onClick={() => handleDifficultySelection(GridSize.EASY)}
           text="6 * 6 (Easy)"
           variant="success"
           isDisabled={isBtnDisabled}
@@ -31,7 +31,7 @@ const ChooseDifficulty = () => {
       </div >
       <div className="mb-2">
         <MainHomeButton
-          onClick={() => handleDifficultySelection(gc.GridSize.NORMAL)}
+          onClick={() => handleDifficultySelection(GridSize.NORMAL)}
           text="7 * 7 (Normal)"
           variant="warning"
           isDisabled={isBtnDisabled}
@@ -39,7 +39,7 @@ const ChooseDifficulty = () => {
       </div>
       <div>
         <MainHomeButton
-          onClick={() => handleDifficultySelection(gc.GridSize.HARD)}
+          onClick={() => handleDifficultySelection(GridSize.HARD)}
           text="8 * 8 (Hard)"
           variant="danger"
           isDisabled={isBtnDisabled}

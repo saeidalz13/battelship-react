@@ -1,9 +1,9 @@
 const Home = "/";
 const ChooseDifficulty = "/choose-difficulty";
-const WaitingRoom = "/waiting-room";
+const Game = "/game";
 
 export default {
   Home,
   ChooseDifficulty,
-  WaitingRoom,
+  Game,
 };
