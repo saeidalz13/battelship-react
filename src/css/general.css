@@ -1,0 +1,12 @@
+.game-uuid-copy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  

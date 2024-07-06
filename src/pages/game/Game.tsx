@@ -5,7 +5,11 @@ import ActionRoom from "./ActionRoom";
 import { useSearchParams } from "react-router-dom";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
-import { Message, RespSessionId } from "../../models/websocket/Response";
+import {
+  Message,
+  RespCreateGame,
+  RespSessionId,
+} from "../../models/websocket/Response";
 import { Code } from "../../models/websocket/Signal";
 import { GameDifficulty, GridSize } from "../../models/websocket/Enums";
 import { ReqCreateGame } from "../../models/websocket/Request";
@@ -17,6 +21,8 @@ enum PageView {
 }
 
 const GameAction = () => {
+  const mounted = useRef(false);
+
   // Set up grid
   const [searchParams] = useSearchParams();
   const gridSize = Number(searchParams.get("gridSize"));
@@ -31,9 +37,8 @@ const GameAction = () => {
 
   // Session info
   const [session, setSession] = useState<Session | null>(null);
+  const [gameUuid, setGameUuid] = useState<string>("");
   const [pageView, setPageView] = useState<PageView>(PageView.WAITING);
-
-  const mounted = useRef(false);
 
   const gameDifficulty = useMemo(() => {
     switch (gridSize) {
@@ -49,12 +54,22 @@ const GameAction = () => {
   }, [gridSize]);
 
   useEffect(() => {
+    const updateSession = (newProperties: Partial<Session>) => {
+      if (session) {
+        setSession({ ...session, ...newProperties });
+      }
+    };
+
     if (!mounted.current) {
       mounted.current = true;
       if (!BACKEND_WS) {
         console.log("URL for ws is not valid");
         return;
       }
+
+      // * Notes:
+      // 1. if web page reloaded, ws gets disconnected (1001 code; going away)
+
       const ws = new WebSocket(BACKEND_WS);
       ws.onopen = (ev) => {
         console.log("Connected to ws backend", ev);
@@ -70,7 +85,10 @@ const GameAction = () => {
       ws.onmessage = (event) => {
         const msg: Message<unknown> = JSON.parse(event.data);
 
-        if (!msg || !msg.code) {
+        console.log(msg);
+        console.log(msg.code);
+
+        if (msg.code === null || msg.code === undefined) {
           console.error("Invalid type of incoming message");
           return;
         }
@@ -83,6 +101,12 @@ const GameAction = () => {
           }
 
           case Code.CREATE_GAME: {
+            const p = msg.payload as RespCreateGame;
+            updateSession({
+              game_uuid: p.game_uuid,
+              player_uuid: p.player_uuid,
+            });
+            setGameUuid(p.game_uuid);
             break;
           }
 
@@ -99,7 +123,7 @@ const GameAction = () => {
         console.log("Connection closed:", ev);
       };
     }
-  }, [gameDifficulty]);
+  }, [gameDifficulty, session, gameUuid]);
 
   if (gridSize === null) {
     return (
@@ -113,7 +137,7 @@ const GameAction = () => {
   return (
     <div>
       {pageView === PageView.WAITING ? (
-        <WaitingRoom />
+        <WaitingRoom gameUuid={gameUuid} />
       ) : (
         <ActionRoom gridArr={gridArr} />
       )}
