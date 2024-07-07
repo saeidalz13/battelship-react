@@ -2,13 +2,14 @@ import { useNavigate } from "react-router-dom";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
 import { FaCopy } from "react-icons/fa";
-import MainHomeButton from "../../components/buttons/MainHomeButton";
+import GeneralButton from "../../components/buttons/GeneralButton";
 import MainRoutes from "../../routes/MainRoutes";
 import { Button, Modal, Alert } from "react-bootstrap";
 import { useEffect, useState } from "react";
 
 interface WaitingRoomProps {
   gameUuid: string;
+  wsConn: WebSocket | null;
 }
 
 const WaitingRoom = (props: WaitingRoomProps) => {
@@ -22,6 +23,17 @@ const WaitingRoom = (props: WaitingRoomProps) => {
     setTimeout(() => {
       setShowAlert(false);
     }, 3000);
+  };
+
+  const closeWsConn = () => {
+    if (props.wsConn) {
+      props.wsConn.close();
+    }
+  };
+
+  const handleBackToDifficulty = () => {
+    closeWsConn();
+    navigate(MainRoutes.ChooseDifficulty);
   };
 
   useEffect(() => {
@@ -81,15 +93,15 @@ const WaitingRoom = (props: WaitingRoomProps) => {
       </Modal>
 
       <div className="text-center mt-2">
-        <MainHomeButton
+        <GeneralButton
           text="Back To Difficulty"
           variant="warning"
-          onClick={() => navigate(MainRoutes.ChooseDifficulty)}
+          onClick={handleBackToDifficulty}
         />
       </div>
 
       <div className="text-center">
-        <BackMainMenu topMargin={divTopMargin.FOUR} />
+        <BackMainMenu topMargin={divTopMargin.FOUR} onClick={closeWsConn} />
       </div>
     </div>
   );

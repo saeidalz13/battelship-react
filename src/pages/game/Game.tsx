@@ -36,6 +36,7 @@ const GameAction = () => {
   }, [gridSize]);
 
   // Session info
+  const [wsConn, setWsConn] = useState<WebSocket | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [gameUuid, setGameUuid] = useState<string>("");
   const [pageView, setPageView] = useState<PageView>(PageView.WAITING);
@@ -71,6 +72,7 @@ const GameAction = () => {
       // 1. if web page reloaded, ws gets disconnected (1001 code; going away)
 
       const ws = new WebSocket(BACKEND_WS);
+      setWsConn(ws);
       ws.onopen = (ev) => {
         console.log("Connected to ws backend", ev);
 
@@ -137,7 +139,7 @@ const GameAction = () => {
   return (
     <div>
       {pageView === PageView.WAITING ? (
-        <WaitingRoom gameUuid={gameUuid} />
+        <WaitingRoom gameUuid={gameUuid} wsConn={wsConn} />
       ) : (
         <ActionRoom gridArr={gridArr} />
       )}

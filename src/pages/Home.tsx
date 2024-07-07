@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import MainHomeButton from "../components/buttons/MainHomeButton";
+import GeneralButton from "../components/buttons/GeneralButton";
 import MainHeader from "../components/headers/MainHeader";
 import MainRoutes from "../routes/MainRoutes";
 
@@ -13,14 +13,14 @@ const Home = () => {
       </div>
 
       <div className="mb-2">
-        <MainHomeButton
+        <GeneralButton
           onClick={() => navigate(MainRoutes.ChooseDifficulty)}
           text="Create Game"
           variant="warning"
         />
       </div>
       <div>
-        <MainHomeButton text="Join Game" variant="danger" />
+        <GeneralButton text="Join Game" variant="danger" />
       </div>
     </div>
   );
