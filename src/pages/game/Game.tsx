@@ -17,6 +17,7 @@ import { Session } from "../../models/game/Session";
 
 enum PageView {
   WAITING = 0,
+  SELECT_GRID,
   ACTION,
 }
 
@@ -109,6 +110,11 @@ const GameAction = () => {
               player_uuid: p.player_uuid,
             });
             setGameUuid(p.game_uuid);
+            break;
+          }
+
+          case Code.SELECT_GRID: {
+            setPageView(PageView.SELECT_GRID)
             break;
           }
 

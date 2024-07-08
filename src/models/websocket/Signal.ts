@@ -3,4 +3,5 @@ export enum Code {
     RECEIVED_INVALID_SESSION_ID,
     CREATE_GAME,
     JOIN_GAME,
+    SELECT_GRID,
 }
