@@ -11,14 +11,13 @@ import {
   RespSessionId,
 } from "../../models/websocket/Response";
 import { Code } from "../../models/websocket/Signal";
-import {
-  GameDifficulty,
-  WebSocketCloseCodes,
-} from "../../models/websocket/Enums";
+import { WebSocketCloseCodes } from "../../models/websocket/Enums";
 import { ReqCreateGame, ReqJoinGame } from "../../models/websocket/Request";
 import { Session } from "../../models/game/Session";
 import { Message } from "../../models/websocket/Message";
 import { GridSize } from "../../models/game/Grid";
+import { Game, GameDifficulty } from "../../models/game/Game";
+import { Player } from "../../models/game/Player";
 
 enum PageView {
   WAITING = 0,
@@ -50,7 +49,6 @@ const GameAction = () => {
   // Session info
   const [wsConn, setWsConn] = useState<WebSocket | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [gameUuid, setGameUuid] = useState<string>("");
   const [pageView, setPageView] = useState<PageView>(PageView.WAITING);
 
   const gameDifficulty = useMemo(() => {
@@ -69,7 +67,11 @@ const GameAction = () => {
   useEffect(() => {
     const updateSession = (newProperties: Partial<Session>) => {
       if (session) {
-        setSession({ ...session, ...newProperties });
+        const updatedSession = new Session(session.getId());
+        if (newProperties.player)
+          updatedSession.setPlayer(newProperties.player);
+        if (newProperties.game) updatedSession.setGame(newProperties.game);
+        setSession(updatedSession);
       }
     };
 
@@ -122,36 +124,47 @@ const GameAction = () => {
 
           case Code.CREATE_GAME: {
             const p = msg.payload as RespCreateGame;
+            const _game = new Game(p.game_uuid, gameDifficulty, gridSize);
+            const _player = new Player(p.player_uuid, true, gridSize);
+
             updateSession({
-              gameUuid: p.game_uuid,
-              playerUuid: p.player_uuid,
-              gridSize: gridSize,
+              game: _game,
+              player: _player,
             });
-            setGameUuid(p.game_uuid);
             break;
           }
 
           case Code.JOIN_GAME: {
             const p = msg.payload as RespJoinGame;
-            updateSession({
-              gameUuid: p.game_uuid,
-              playerUuid: p.player_uuid,
-              gridSize: gridSize,
-            });
+            if (joinGameUuid) {
+              let _gs = -1;
+              switch (p.game_difficulty) {
+                case GameDifficulty.Easy:
+                  setGridSize(GridSize.EASY);
+                  _gs = GridSize.EASY;
+                  break;
+                case GameDifficulty.Normal:
+                  setGridSize(GridSize.NORMAL);
+                  _gs = GridSize.NORMAL;
+                  break;
+                case GameDifficulty.Hard:
+                  setGridSize(GridSize.HARD);
+                  _gs = GridSize.HARD;
+                  break;
 
-            switch (p.game_difficulty) {
-              case GameDifficulty.Easy:
-                setGridSize(GridSize.EASY);
-                break;
-              case GameDifficulty.Normal:
-                setGridSize(GridSize.NORMAL);
-                break;
-              case GameDifficulty.Hard:
-                setGridSize(GridSize.HARD);
-                break;
+                default:
+                  alert("Server error! Try again later");
+              }
+              const _game = new Game(p.game_uuid, p.game_difficulty, _gs);
+              const _player = new Player(p.player_uuid, false, _gs);
 
-              default:
-                alert("Server error! Try again later");
+              updateSession({
+                game: _game,
+                player: _player,
+              });
+
+            } else {
+              alert("Invalid game uuid");
             }
 
             break;
@@ -178,7 +191,7 @@ const GameAction = () => {
         }
       };
     }
-  }, [gameDifficulty, session, gameUuid, isHost, joinGameUuid, gridSize]);
+  }, [gameDifficulty, session, isHost, joinGameUuid, gridSize]);
 
   // Meaning the host came to this page
   // but no grid size was provided
@@ -194,8 +207,8 @@ const GameAction = () => {
 
   return (
     <div>
-      {pageView === PageView.WAITING && isHost ? (
-        <WaitingRoom gameUuid={gameUuid} wsConn={wsConn} />
+      {pageView === PageView.WAITING && isHost && session && session.game ? (
+        <WaitingRoom gameUuid={session.game.getUuid()} wsConn={wsConn} />
       ) : (
         <ActionRoom gridArr={gridArr} />
       )}

@@ -1,15 +1,26 @@
+import { Game } from "./Game";
+import { Player } from "./Player";
+
 export class Session {
-  id: string;
-  gameUuid: string;
-  playerUuid: string;
-  gridSize: number;
-  gameMode: number;
+  private id: string;
+  public player: Player | null;
+  public game: Game | null;
 
   constructor(id: string) {
     this.id = id;
-    this.gameUuid = "";
-    this.playerUuid = "";
-    this.gridSize = -1;
-    this.gameMode = -1;
+    this.player = null;
+    this.game = null;
+  }
+
+  public getId(): string {
+    return this.id;
+  }
+
+  public setPlayer(player: Player | null) {
+    this.player = player;
+  }
+
+  public setGame(game: Game | null) {
+    this.game = game;
   }
 }
