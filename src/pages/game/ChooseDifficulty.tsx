@@ -5,16 +5,16 @@ import { useState } from "react";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
 import MainRoutes from "../../routes/MainRoutes";
-import { GridSize } from "../../models/websocket/Enums";
+import { GridSize } from "../../models/game/Grid";
 
 const ChooseDifficulty = () => {
   const navigate = useNavigate();
   const [isBtnDisabled, setIsBtnDisabled] = useState<boolean>(false);
-
+  const isHost = true;
   const handleDifficultySelection = (gridSize: number) => {
     setIsBtnDisabled(true);
 
-    navigate(`${MainRoutes.Game}?gridSize=${gridSize}`);
+    navigate(`${MainRoutes.Game}?gridSize=${gridSize}&isHost=${isHost}`);
   };
 
   return (

@@ -1,11 +1,15 @@
 export class Session {
   id: string;
-  game_uuid: string;
-  player_uuid: string;
+  gameUuid: string;
+  playerUuid: string;
+  gridSize: number;
+  gameMode: number;
 
   constructor(id: string) {
     this.id = id;
-    this.game_uuid = "";
-    this.player_uuid = "";
+    this.gameUuid = "";
+    this.playerUuid = "";
+    this.gridSize = -1;
+    this.gameMode = -1;
   }
 }

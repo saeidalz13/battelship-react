@@ -7,3 +7,9 @@ export const newGrid = (gridSize: number): TGrid => {
   }
   return grid;
 };
+
+export enum GridSize {
+  EASY = 6,
+  NORMAL,
+  HARD,
+}
