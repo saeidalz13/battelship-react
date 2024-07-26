@@ -1,10 +1,11 @@
-import MainHomeButton from "./MainHomeButton";
+import GeneralButton from "./GeneralButton";
 import MainRoutes from "../../routes/MainRoutes";
 import { useNavigate } from "react-router-dom";
 import { divTopMargin } from "../../constants/divConsts";
 
 interface BackMainMenuProps {
   topMargin: divTopMargin;
+  onClick?: () => void;
 }
 
 const BackMainMenu = (props: BackMainMenuProps) => {
@@ -12,8 +13,13 @@ const BackMainMenu = (props: BackMainMenuProps) => {
 
   return (
     <div className={props.topMargin}>
-      <MainHomeButton
-        onClick={() => navigate(MainRoutes.Home)}
+      <GeneralButton
+        onClick={() => {
+          if (props.onClick) {
+            props.onClick();
+          }
+          navigate(MainRoutes.Home);
+        }}
         text="Back To Main Page"
         variant="dark"
       />

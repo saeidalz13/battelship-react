@@ -6,26 +6,37 @@ import { useSearchParams } from "react-router-dom";
 import BackMainMenu from "../../components/buttons/BackMainMenu";
 import { divTopMargin } from "../../constants/divConsts";
 import {
-  Message,
   RespCreateGame,
+  RespJoinGame,
   RespSessionId,
 } from "../../models/websocket/Response";
 import { Code } from "../../models/websocket/Signal";
-import { GameDifficulty, GridSize } from "../../models/websocket/Enums";
-import { ReqCreateGame } from "../../models/websocket/Request";
+import { WebSocketCloseCodes } from "../../models/websocket/Enums";
+import { ReqCreateGame, ReqJoinGame } from "../../models/websocket/Request";
 import { Session } from "../../models/game/Session";
+import { Message } from "../../models/websocket/Message";
+import { GridSize } from "../../models/game/Grid";
+import { Game, GameDifficulty } from "../../models/game/Game";
+import { Player } from "../../models/game/Player";
 
 enum PageView {
   WAITING = 0,
+  SELECT_GRID,
   ACTION,
 }
 
 const GameAction = () => {
   const mounted = useRef(false);
 
-  // Set up grid
+  // Search the url params
   const [searchParams] = useSearchParams();
-  const gridSize = Number(searchParams.get("gridSize"));
+  const gridSizeParams = Number(searchParams.get("gridSize"));
+  const isHost = Boolean(searchParams.get("isHost"));
+  const joinGameUuid = searchParams.get("joinGameUuid");
+
+  // use state
+  const [gridSize, setGridSize] = useState<number>(gridSizeParams);
+
   const gridArr = useMemo(() => {
     const _arr: number[] = [];
     for (let i = 0; i < gridSize; i++) {
@@ -36,8 +47,8 @@ const GameAction = () => {
   }, [gridSize]);
 
   // Session info
+  const [wsConn, setWsConn] = useState<WebSocket | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [gameUuid, setGameUuid] = useState<string>("");
   const [pageView, setPageView] = useState<PageView>(PageView.WAITING);
 
   const gameDifficulty = useMemo(() => {
@@ -56,7 +67,11 @@ const GameAction = () => {
   useEffect(() => {
     const updateSession = (newProperties: Partial<Session>) => {
       if (session) {
-        setSession({ ...session, ...newProperties });
+        const updatedSession = new Session(session.getId());
+        if (newProperties.player)
+          updatedSession.setPlayer(newProperties.player);
+        if (newProperties.game) updatedSession.setGame(newProperties.game);
+        setSession(updatedSession);
       }
     };
 
@@ -71,22 +86,29 @@ const GameAction = () => {
       // 1. if web page reloaded, ws gets disconnected (1001 code; going away)
 
       const ws = new WebSocket(BACKEND_WS);
+      setWsConn(ws);
       ws.onopen = (ev) => {
         console.log("Connected to ws backend", ev);
 
-        const msgCreateGame = JSON.stringify({
-          code: Code.CREATE_GAME,
-          payload: { game_difficulty: gameDifficulty },
-        } as Message<ReqCreateGame>);
+        if (isHost) {
+          const msgCreateGame = JSON.stringify({
+            code: Code.CREATE_GAME,
+            payload: { game_difficulty: gameDifficulty },
+          } as Message<ReqCreateGame>);
 
-        ws.send(msgCreateGame);
+          ws.send(msgCreateGame);
+        } else {
+          const msgJoinGame = JSON.stringify({
+            code: Code.JOIN_GAME,
+            payload: { game_uuid: joinGameUuid },
+          } as Message<ReqJoinGame>);
+
+          ws.send(msgJoinGame);
+        }
       };
 
       ws.onmessage = (event) => {
         const msg: Message<unknown> = JSON.parse(event.data);
-
-        console.log(msg);
-        console.log(msg.code);
 
         if (msg.code === null || msg.code === undefined) {
           console.error("Invalid type of incoming message");
@@ -102,15 +124,59 @@ const GameAction = () => {
 
           case Code.CREATE_GAME: {
             const p = msg.payload as RespCreateGame;
+            const _game = new Game(p.game_uuid, gameDifficulty, gridSize);
+            const _player = new Player(p.player_uuid, true, gridSize);
+
             updateSession({
-              game_uuid: p.game_uuid,
-              player_uuid: p.player_uuid,
+              game: _game,
+              player: _player,
             });
-            setGameUuid(p.game_uuid);
+            break;
+          }
+
+          case Code.JOIN_GAME: {
+            const p = msg.payload as RespJoinGame;
+            if (joinGameUuid) {
+              let _gs = -1;
+              switch (p.game_difficulty) {
+                case GameDifficulty.Easy:
+                  setGridSize(GridSize.EASY);
+                  _gs = GridSize.EASY;
+                  break;
+                case GameDifficulty.Normal:
+                  setGridSize(GridSize.NORMAL);
+                  _gs = GridSize.NORMAL;
+                  break;
+                case GameDifficulty.Hard:
+                  setGridSize(GridSize.HARD);
+                  _gs = GridSize.HARD;
+                  break;
+
+                default:
+                  alert("Server error! Try again later");
+              }
+              const _game = new Game(p.game_uuid, p.game_difficulty, _gs);
+              const _player = new Player(p.player_uuid, false, _gs);
+
+              updateSession({
+                game: _game,
+                player: _player,
+              });
+
+            } else {
+              alert("Invalid game uuid");
+            }
+
+            break;
+          }
+
+          case Code.SELECT_GRID: {
+            setPageView(PageView.SELECT_GRID);
             break;
           }
 
           default:
+            console.log("Invalid code in message:", msg.code);
             return;
         }
       };
@@ -119,16 +185,21 @@ const GameAction = () => {
         console.log("Error in ws conn:", err);
       };
 
-      ws.onclose = (ev) => {
-        console.log("Connection closed:", ev);
+      ws.onclose = (event) => {
+        if (event.code === WebSocketCloseCodes.ABNORMAL_CLOSURE) {
+          alert(`Connection closed: ${event.code}`);
+        }
       };
     }
-  }, [gameDifficulty, session, gameUuid]);
+  }, [gameDifficulty, session, isHost, joinGameUuid, gridSize]);
 
-  if (gridSize === null) {
+  // Meaning the host came to this page
+  // but no grid size was provided
+  if (gridSize === null && !isHost) {
     return (
       <>
         Invalid Route! Please go back
+        {alert("Invalid page! Go back to menu please")}
         <BackMainMenu topMargin={divTopMargin.FOUR} />
       </>
     );
@@ -136,8 +207,8 @@ const GameAction = () => {
 
   return (
     <div>
-      {pageView === PageView.WAITING ? (
-        <WaitingRoom gameUuid={gameUuid} />
+      {pageView === PageView.WAITING && isHost && session && session.game ? (
+        <WaitingRoom gameUuid={session.game.getUuid()} wsConn={wsConn} />
       ) : (
         <ActionRoom gridArr={gridArr} />
       )}

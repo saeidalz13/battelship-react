@@ -6,24 +6,32 @@ enum PlayerMatchStatus {
   WON,
 }
 
-class Player {
-  uuid: string;
-  is_turn: boolean;
-  is_ready: boolean;
-  is_host: boolean;
-  match_status: number;
-  sunken_ships: number;
-  attack_grid: TGrid;
-  defence_grid: TGrid;
+export class Player {
+  private uuid: string;
+  isTurn: boolean;
+  isReady: boolean;
+  isHost: boolean;
+  private matchStatus: number;
+  sunkenShips: number;
+  attackGrid: TGrid;
+  defenceGrid: TGrid;
 
-  constructor(uuid: string, is_host: boolean, gridSize: number) {
+  constructor(uuid: string, isHost: boolean, gridSize: number) {
     this.uuid = uuid;
-    this.is_host = is_host;
-    this.is_turn = this.is_host ? true : false;
-    this.is_ready = false;
-    this.match_status = PlayerMatchStatus.UNDEFINED;
-    this.sunken_ships = 0;
-    this.attack_grid = newGrid(gridSize);
-    this.defence_grid = newGrid(gridSize);
+    this.isHost = isHost;
+    this.isTurn = this.isHost ? true : false;
+    this.isReady = false;
+    this.matchStatus = PlayerMatchStatus.UNDEFINED;
+    this.sunkenShips = 0;
+    this.attackGrid = newGrid(gridSize);
+    this.defenceGrid = newGrid(gridSize);
+  }
+
+  public getUuid(): string {
+    return this.uuid;
+  }
+
+  public getMatchStatus(): number {
+    return this.matchStatus;
   }
 }
